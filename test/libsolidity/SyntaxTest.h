@@ -18,6 +18,7 @@
 #pragma once
 
 #include <test/libsolidity/AnalysisFramework.h>
+#include <test/libsolidity/FormattedPrinter.h>
 #include <libsolidity/interface/Exceptions.h>
 
 #include <boost/noncopyable.hpp>
@@ -42,18 +43,37 @@ struct SyntaxTestExpectation
 };
 
 
-class SyntaxTest: AnalysisFramework
+class SyntaxTest: AnalysisFramework, public FormattedPrinter
 {
 public:
-	SyntaxTest(std::string const& _filename);
+	SyntaxTest(std::string const& _filename, bool _enableColor = false);
 
-	bool run(std::ostream& _stream, std::string const& _indent);
+	bool run(std::ostream& _stream, std::string const& _linePrefix = "", int _indent = -1);
 
-	void printExpected(std::ostream& _stream, std::string const& _indent) const;
+	std::vector<SyntaxTestExpectation> const& expectations() const
+	{
+		return m_expectations;
+	}
+	std::string const& source() const
+	{
+		return m_source;
+	}
+	ErrorList const& errorList() const
+	{
+		return m_errorList;
+	}
+	ErrorList const& compilerErrors() const
+	{
+		return m_compiler.errors();
+	}
+
+	void printExpected(std::ostream& _stream, std::string const& _linePrefix) const;
 	void printErrorList(
 		std::ostream& _stream,
 		ErrorList const& _errors,
-		std::string const& _indent
+		std::string const& _linePrefix,
+		bool const _ignoreWarnings,
+		bool const _lineNumbers
 	) const;
 
 	static int registerTests(
@@ -66,6 +86,7 @@ private:
 	static std::string errorMessage(Error const& _e);
 	static std::string parseSource(std::istream& _stream);
 	static std::vector<SyntaxTestExpectation> parseExpectations(std::istream& _stream);
+	int getLineNumber(int _location) const;
 
 	std::string m_source;
 	std::vector<SyntaxTestExpectation> m_expectations;
